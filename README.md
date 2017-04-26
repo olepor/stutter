@@ -46,7 +46,7 @@ Creates and inserts the stutter into the stutter-tree "latex-stutter-character-e
 
 Which now makes the stutter-tree look like:
 
-![example](stutter-tree-example.png)"Example-tree"
+![example](stutter-example-tree.png)
 
 ### The expansion of this stutter, and a few more will now look like
 ![test](https://gfycat.com/PersonalInstructiveDuckbillplatypus)
