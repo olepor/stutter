@@ -1,0 +1,64 @@
+#+TITLE: latex-stutter-minor-mode
+#+AUTHOR: Ole Petter Orhagen
+#+BABEL: :cache yes
+#+LATEX_HEADER: \usepackage{parskip}
+#+LATEX_HEADER: \usepackage{inconsolata}
+#+LATEX_HEADER: \usepackage[utf8]{inputenc}
+#+PROPERTY: header-args :tangle yes
+
+* About
+
+This is an example on how to use the stutter-tree structure
+with a minor-mode for LaTeX.
+
+* Code
+Load the functions and the stutter-tree file
+#+BEGIN-SRC emacs-lisp
+(load-file "~/.emacsmodes/stutter-mode/stutter-tree.el")
+(load-file "~/.emacsmodes/stutter-mode/latex-stutter-expansion-functions.el")
+#+END_SRC
+
+Create a pointer to hold the stutter-tree that will be used
+#+BEGIN-SRC emacs-lisp
+(defvar latex-stutter-character-expansion-tree nil
+  "A tree that holds the expansion structure for stutter mode")
+#+END_SRC
+
+Create and insert the stutters you would like
+#+BEGIN-SRC emacs-lisp
+(defun create-latex-stutters ()
+  (interactive)
+  (setq latex-stutter-character-expansion-tree (list (cons 1 #'test-print)))
+  (setq latex-stutter-tree-pointer latex-stutter-character-expansion-tree)
+  (insert-and-create-stutter ",," #'latex-stutter-expand-inline-math-mode latex-stutter-character-expansion-tree)
+  (insert-and-create-stutter ",." #'latex-stutter-expand-section-sub-section latex-stutter-character-expansion-tree)
+  (insert-and-create-stutter ";;" #'latex-stutter-expand-begin-align latex-stutter-character-expansion-tree)
+  (add-hook 'post-command-hook 'latex-stutter-electric-expand))
+#+END_SRC
+
+Lastly define a minor-mode
+#+BEGIN-SRC emacs-lisp
+(define-minor-mode latex-stutter-mode
+  "A minor mode to simplify writing certain environments in
+LAteX"
+  :lighter "LaTeX stutter"
+  :require 'latex-mode
+  :version "0.1"
+  ;; As every insert is simply a command, binding to post-command-hook
+  ;;does the trick
+  (add-hook 'post-command-hook 'latex-stutter-electric-expand)
+  (create-latex-stutters))
+#+END_SRC
+
+Notice the hook
+#+BEGIN-SRC emacs-lisp
+(add-hook 'post-command-hook 'latex-stutter-electric-expand)
+#+END_SRC
+Which makes sure that - since every keypress is a command in emacs- the stutter-tree
+is updated every time we press a key.
+
+Lastly make the minor-mode available
+#+BEGIN-SRC emacs-lisp
+(provide 'latex-stutter-minor-mode)
+#+END_SRC
+

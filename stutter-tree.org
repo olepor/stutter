@@ -1,0 +1,170 @@
+#+TITLE: stutter-tree
+#+AUTHOR: Ole Petter Orhagen
+#+BABEL: :cache yes
+#+LATEX_HEADER: \usepackage{parskip}
+#+LATEX_HEADER: \usepackage{inconsolata}
+#+LATEX_HEADER: \usepackage[utf8]{inputenc}
+#+PROPERTY: header-args :tangle yes
+
+* About
+  Stutter tree is the structure that will hold all our stutters.
+
+* Code
+  The variables are a pointer to the tree-head, and a pointer to our location
+  in the stutter-tree.
+#+BEGIN-SRC emacs-lisp
+(defvar stutter-tree-head nil
+  "Head of the stutter tree")
+
+(defvar stutter-tree-pointer nil
+  "points to the last entered item of a sequence, or at the root of the tree")
+#+END_SRC
+
+This needs fixing, but no time atm
+#+BEGIN-SRC emacs-lisp
+;; Needed, as minsert does not handle inserts into empty lists
+(setq latex-stutter-character-expansion-tree (list (cons 1 #'test-print)))
+#+END_SRC
+
+The function that is run-everytime the tree is to be updated
+#+BEGIN-SRC emacs-lisp
+(defun latex-stutter-electric-expand ()
+  (interactive)
+  (when evil-insert-state-minor-mode
+    (let ((prev-char (preceding-char)))
+      (update-stutter-pointer prev-char))))
+#+END_SRC
+
+Utility function to create a m-list structure from a character-sequence.
+#+BEGIN-SRC emacs-lisp
+(defun create-mlists (tlists)
+  (let* (
+         (mlists (list (cons (car tlists) nil)))
+         (temp-list-pointer (car mlists)))
+    (setq tlists (cdr tlists))
+    (dotimes (i (1- (length tlists)))
+      (setcdr temp-list-pointer (list (cons (car tlists) nil)))
+      (setq temp-list-pointer (cadr temp-list-pointer))
+      (setq tlists (cdr tlists)))
+    (progn
+      (setcdr temp-list-pointer (car tlists))
+      mlists)))
+#+END_SRC
+
+Function to insert stutter into the stutter-tree
+#+BEGIN-SRC emacs-lisp
+(defun minsert (element mlist)
+  (cond
+   ((consp (car mlist))
+    (progn
+      ;; Check id's towards element id
+      (if (= (car element) (caar mlist))
+          (progn
+            (minsert (cdr element) (car mlist)))
+        (if (cdr mlist)
+            ;; mlist has a cdr
+            (minsert element (cdr mlist))
+         (setcdr mlist (create-mlists element))))))
+   ((integerp (car mlist))
+    (progn
+      ;; the element is either a function, or a cons-cell list
+      ;; the id's cdr is either a function or an mlist
+      (if (functionp (car element))
+          (progn
+           (setcdr mlist (car element))
+           )
+        (if (functionp (cdr mlist))
+            (progn
+             (if (> (length element) 1)
+                 (setcdr mlist (create-mlists element))
+               (setcdr mlist (list element)))
+             )
+          ;; the element cdr is an mlist and so is the cdr of id
+          ;; Thus insert it into the mlist
+          (minsert element (cdr mlist))))))
+   (t "message The car is neither cons nor integer - error!")))
+#+END_SRC
+
+Looks messy, but essentially is has three main parts
+
+Case-1: The cons is a cons-cell, in which case the pointer is at an m-list.
+#+BEGIN-SRC emacs-lisp :tangle no
+   ((consp (car mlist))
+    (progn
+      ;; Check id's towards element id
+      (if (= (car element) (caar mlist))
+          (progn
+            (minsert (cdr element) (car mlist)))
+        (if (cdr mlist)
+            ;; mlist has a cdr
+            (minsert element (cdr mlist))
+         (setcdr mlist (create-mlists element))))))
+#+END_SRC
+
+Case-2: The cons is an integer, in which case the pointer is at a cons-cell.
+Therefore the cdr could be: 1. a function, or 2. another m-list lurking.
+#+BEGIN-SRC emacs-lisp :tangle no
+   ((integerp (car mlist))
+    (progn
+      ;; the element is either a function, or a cons-cell list
+      ;; the id's cdr is either a function or an mlist
+      (if (functionp (car element))
+          (progn
+           (setcdr mlist (car element))
+           )
+        (if (functionp (cdr mlist))
+            (progn
+             (if (> (length element) 1)
+                 (setcdr mlist (create-mlists element))
+               (setcdr mlist (list element)))
+             )
+          ;; the element cdr is an mlist and so is the cdr of id
+          ;; Thus insert it into the mlist
+          (minsert element (cdr mlist))))))
+#+END_SRC
+
+The function we use to update the stutter-tree-pointer
+#+BEGIN-SRC emacs-lisp
+(defun update-stutter-pointer (arg)
+  (interactive)
+  ;; if arg in mlist or arg equals id?
+  ;; #1 find the id-cons-cell in the mlist
+  (if (consp (car stutter-tree-pointer))
+      (if (= arg (caar stutter-tree-pointer))
+          (if (functionp (cdar stutter-tree-pointer))
+              (progn
+                (funcall (cdar stutter-tree-pointer))
+                (setq stutter-tree-pointer latex-stutter-character-expansion-tree))
+            (setq stutter-tree-pointer (cdar stutter-tree-pointer)))
+        (progn
+          (setq stutter-tree-pointer (cdr stutter-tree-pointer))
+          (update-stutter-pointer arg)))
+    ;; Might not be necessary. we will always be working with mlists
+    (setq stutter-tree-pointer latex-stutter-character-expansion-tree)))
+#+END_SRC
+
+Small hack that is used with the add-to-list in order to insert duplicates
+#+BEGIN-SRC emacs-lisp
+;; Needed to append equal elements with add-to-list
+(defun false-compare-fn (a b)
+  (interactive)
+  nil)
+#+END_SRC
+
+Which comes to handy use when creating stutters
+#+BEGIN-SRC emacs-lisp
+(defun create-stutter (stutter function)
+  (let (stutter-list)
+    (dotimes (i (length stutter))
+      (add-to-list 'stutter-list (string-to-char (substring stutter i (1+ i))) t #'false-compare-fn))
+    (progn
+      (setcdr (last stutter-list) (cons function nil))
+      stutter-list)))
+#+END_SRC
+
+The function that creates and inserts a stutter into the tree. 
+Is simply a wrapper around minsert.
+#+BEGIN-SRC emacs-lisp
+(defun insert-and-create-stutter (stutter function targetlist)
+  (minsert (create-stutter stutter function) targetlist))
+#+END_SRC
