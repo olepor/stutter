@@ -5,7 +5,7 @@ Stutter mode is heavily inspired by [vhdl-mode's stutter-mode](https://guest.iis
 ## Stutter-tree
 Stutter-tree is a tree that holds a cons-cell structure like so:
 
-![stutter-tree](https://github.com/olepor/stutter/blob/master/stutter-tree.png) "The stutter-tree structure"
+![stutter-tree](stutter-tree.png) "The stutter-tree structure"
 
 every node in the tree is a list of cons-cells like this
 
