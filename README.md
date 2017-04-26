@@ -49,4 +49,4 @@ Which now makes the stutter-tree look like:
 ![example](stutter-example-tree.png)
 
 ### The expansion of this stutter, and a few more will now look like
-![test](https://gfycat.com/PersonalInstructiveDuckbillplatypus)
+![test](https://gfycat.com/PersonalInstructiveDuckbillplatypus.gif)
