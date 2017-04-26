@@ -5,7 +5,7 @@ Stutter mode is heavily inspired by [vhdl-mode's stutter-mode](https://guest.iis
 ## Stutter-tree
 Stutter-tree is a tree that holds a cons-cell structure like so:
 
-![stutter-tree](stutter-tree.png) "The stutter-tree structure"
+![stutter-tree](stutter-tree.png)
 
 every node in the tree is a list of cons-cells like this
 
@@ -46,7 +46,7 @@ Creates and inserts the stutter into the stutter-tree "latex-stutter-character-e
 
 Which now makes the stutter-tree look like:
 
-![example](https://github.com/olepor/stutter/stutter-tree-example.png)"Example-tree"
+![example](stutter-tree-example.png)"Example-tree"
 
 ### The expansion of this stutter, and a few more will now look like
 ![test](https://gfycat.com/PersonalInstructiveDuckbillplatypus)
